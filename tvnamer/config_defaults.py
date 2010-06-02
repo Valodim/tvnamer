@@ -66,6 +66,9 @@ defaults = {
     # Search in all possible languages
     'search_all_languages': True,
 
+    # Create hard links instead of renaming files?
+    'link_files_enable': False,
+
     # Move renamed files to directory?
     'move_files_enable': False,
 
