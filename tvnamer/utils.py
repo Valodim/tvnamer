@@ -594,7 +594,11 @@ class Renamer(object):
                 raise OSError("File %s already exists, not forcefully renaming %s" % (
                     newpath, self.filename))
 
-        os.rename(self.filename, newpath)
+        if Config['link_files_enable']:
+            p("Creating hard link")
+            os.link(self.filename, newpath)
+        else:
+            os.rename(self.filename, newpath)
         self.filename = newpath
 
     def newPath(self, new_path, force = False, always_copy = False, always_move = False, create_dirs = True, getPathPreview = False):
@@ -607,6 +611,9 @@ class Renamer(object):
 
         if always_copy and always_move:
             raise ValueError("Both always_copy and always_move cannot be specified")
+
+        if Config["link_files_enable"] and always_copy:
+            warn("WARNING: having link_files_enable and always_copy both True can lead to 3 copies of a file: the original, a hard link and a copy")
 
         old_dir, old_filename = os.path.split(self.filename)
 
@@ -659,3 +666,4 @@ class Renamer(object):
                 delete_file(self.filename)
 
         self.filename = new_fullpath
+
