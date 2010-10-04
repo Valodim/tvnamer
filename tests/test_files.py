@@ -106,6 +106,12 @@ files['s01e01_format'] = [
     'correctedseriesname': 'Scrubs',
     'seasonnumber': 1, 'episodenumbers': [1],
     'episodenames': ['My First Day']},
+
+    {'input': 'Scrubs - [s01e01].avi',
+    'parsedseriesname': 'Scrubs',
+    'correctedseriesname': 'Scrubs',
+    'seasonnumber': 1, 'episodenumbers': [1],
+    'episodenames': ['My First Day']},
 ]
 
 files['misc'] = [
@@ -225,6 +231,13 @@ files['multiple_episodes'] = [
     'correctedseriesname': 'Scrubs',
     'seasonnumber': 1, 'episodenumbers': [22, 23],
     'episodenames': ['My Occurrence', 'My Hero']},
+
+    {'input': 'Scrubs.S01E01-E04.avi',
+    'parsedseriesname': 'Scrubs',
+    'correctedseriesname': 'Scrubs',
+    'seasonnumber': 1, 'episodenumbers': [1, 2, 3, 4],
+    'episodenames': ['My First Day', 'My Mentor', 'My Best Friend\'s Mistake', 'My Old Lady']},
+
 ]
 
 files['unicode'] = [
@@ -246,11 +259,11 @@ files['unicode'] = [
     'seasonnumber': 2, 'episodenumbers': [7],
     'episodenames': [u'The Panty Pi\xf1ata Polarization']},
 
-    {'input': u'Der gefa\u0308hrlichste Job Alaskas s01e01.avi',
-    'parsedseriesname': u'Der gefa\u0308hrlichste Job Alaskas',
-    'correctedseriesname': u'Der gefa\u0308hrlichste Job Alaskas',
-    'seasonnumber': 1, 'episodenumbers': [1],
-    'episodenames': [u'FIXME']},
+    {'input': u'NCIS - 1x16.avi',
+    'parsedseriesname': u'NCIS',
+    'correctedseriesname': u'NCIS',
+    'seasonnumber': 1, 'episodenumbers': [16],
+    'episodenames': [u'B\xeate Noire']},
 ]
 
 files['anime'] = [
@@ -297,12 +310,17 @@ files['anime'] = [
     'episodenames': ['Broken World']},
 ]
 
-files['misc'] = [
+files['date_based'] = [
     {'input': 'Scrubs.2001-10-02.avi',
     'parsedseriesname': 'Scrubs',
     'correctedseriesname': 'Scrubs',
-    'seasonnumber': -1, 'episodenumbers': [datetime.date(2001, 10, 2)],
+    'episodenumbers': [datetime.date(2001, 10, 2)],
     'episodenames': ['My First Day']},
+    {'input': 'yes.we.canberra.2010.08.18.pdtv.xvid',
+    'parsedseriesname': 'yes we canberra',
+    'correctedseriesname': 'Yes We Canberra',
+    'episodenumbers': [datetime.date(2010, 8, 18)],
+    'episodenames': ['Episode 4']},
 ]
 
 files['x_of_x'] = [
@@ -315,15 +333,15 @@ files['x_of_x'] = [
 
 
 def test_verify_test_data_sanity():
-    """Checks all test data is consistent
+    """Checks all test data is consistent.
+
+    Keys within each test category must be consistent, but keys can vary
+    category to category. E.g date-based episodes do not have a season number
     """
     from helpers import assertEquals
 
-    keys = []
-    for alltests in files.values():
-        for ctest in alltests:
-            keys.append(ctest.keys())
-
-    for k1 in keys:
-        for k2 in keys:
-            assertEquals(sorted(k1), sorted(k2))
+    for test_category, testcases in files.items():
+        keys = [ctest.keys() for ctest in testcases]
+        for k1 in keys:
+            for k2 in keys:
+                assertEquals(sorted(k1), sorted(k2))

@@ -41,6 +41,9 @@ defaults = {
     # removing characters than can't be translated.
     'normalize_unicode_filenames': False,
 
+    # Convert output filenames to lower case (applied after replacements)
+    'lowercase_filename': False,
+
     # Replacement characters for invalid filename characters
     'replace_invalid_characters_with': '_',
 
@@ -161,7 +164,7 @@ defaults = {
              [Ee]?[0-9]+
         )*
              [\-]                                # separator
-             (?P<episodenumberend>[0-9]+)        # final episode num
+             [Ee]?(?P<episodenumberend>[0-9]+)   # final episode num
         [\.\- ]                                  # must have a separator (prevents s01e01-720p from being 720 episodes)
         [^\/]*$''',
 
@@ -209,13 +212,15 @@ defaults = {
 
         # foo.s01.e01, foo.s01_e01
         '''^((?P<seriesname>.+?)[ \._\-])?
+        \[?
         [Ss](?P<seasonnumber>[0-9]+)[\.\- ]?
         [Ee]?(?P<episodenumber>[0-9]+)
+        \]?
         [^\\/]*$''',
 
         # foo.2010.01.02.etc
         '''
-        ^((?P<seriesname>.+?)[ \._\-])?         # show name
+        ^((?P<seriesname>.+?)[ \._\-])?          # show name
         (?P<year>\d{4})                          # year
         [ \._\-]                                 # separator
         (?P<month>\d{2})                         # month
@@ -280,10 +285,16 @@ defaults = {
      '%(seriesname)s - [%(seasonno)02dx%(episode)s] - %(episodename)s%(ext)s',
     'filename_without_episode':
      '%(seriesname)s - [%(seasonno)02dx%(episode)s]%(ext)s',
-     'filename_with_episode_no_season':
+    'filename_with_episode_no_season':
       '%(seriesname)s - [%(episode)s] - %(episodename)s%(ext)s',
-     'filename_without_episode_no_season':
-      '%(seriesname)s - [%(episode)s]%(ext)s',
+    'filename_without_episode_no_season':
+     '%(seriesname)s - [%(episode)s]%(ext)s',
+
+    'filename_with_date_and_episode':
+     '%(seriesname)s - [%(episode)s] - %(episodename)s%(ext)s',
+
+    'filename_with_date_without_episode':
+     '%(seriesname)s - [%(episode)s]%(ext)s',
 
     # Used to join multiple episode names together
     'multiep_join_name_with': ', ',

@@ -115,10 +115,7 @@ def processFile(tvdb_instance, episode):
         replaced = applyCustomInputReplacements(episode.fullfilename)
         p("# With custom replacements: %s" % (replaced))
 
-    p("# Detected series: %s (season: %s, episode: %s)" % (
-        episode.seriesname,
-        episode.seasonnumber,
-        ", ".join([str(x) for x in episode.episodenumbers])))
+    p("# Detected series: %s (%s)" % (episode.seriesname, episode.number_string()))
 
     try:
         correctedSeriesName, epName = getEpisodeName(tvdb_instance, episode)
@@ -184,7 +181,7 @@ def processFile(tvdb_instance, episode):
 
         if Config['move_files_enable']:
             newPath = getDestinationFolder(episode)
-            previewPath = doMoveFile(cnamer = cnamer, destDir = newPath, getPathPreview = True)
+            doMoveFile(cnamer = cnamer, destDir = newPath, getPathPreview = True)
 
             if Config['move_files_confirmation']:
                 ans = confirm("Move file?", options = ['y', 'n', 'q'], default = 'y')
@@ -241,7 +238,6 @@ def tvnamer(paths):
     episodes_found = []
 
     for cfile in findFiles(paths):
-        cfile = cfile.decode("utf-8")
         parser = FileParser(cfile)
         try:
             episode = parser.parse()
@@ -256,7 +252,7 @@ def tvnamer(paths):
     p("# Found %d episode" % len(episodes_found) + ("s" * (len(episodes_found) > 1)))
 
     # Sort episodes by series name, season and episode number
-    episodes_found.sort(key = lambda x: (x.seriesname, x.seasonnumber, x.episodenumbers))
+    episodes_found.sort(key = lambda x: x.sortable_info())
 
     tvdb_instance = Tvdb(
         interactive=not Config['select_first'],
@@ -277,6 +273,8 @@ def main():
     opter = cliarg_parser.getCommandlineParser(defaults)
 
     opts, args = opter.parse_args()
+
+    args = [x.decode("utf-8") for x in args]
 
     if opts.verbose:
         logging.basicConfig(

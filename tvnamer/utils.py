@@ -61,7 +61,7 @@ def getEpisodeName(tvdb_instance, episode):
         # Series was found, use corrected series name
         correctedShowName = show['seriesname']
 
-    if episode.seasonnumber == -1:
+    if isinstance(episode, DatedEpisodeInfo):
         # Date-based episode
         epnames = []
         for cepno in episode.episodenumbers:
@@ -303,14 +303,6 @@ class FileParser(object):
                         "episodenumberstart and episodenumberend\n\nPattern"
                         "was:\n" + cmatcher.pattern)
 
-                if 'seasonnumber' in namedgroups:
-                    seasonnumber = int(match.group('seasonnumber'))
-                elif 'year' in namedgroups and 'month' in namedgroups and 'day' in namedgroups:
-                    seasonnumber = -1
-                else:
-                    # No season number specified, usually for Anime
-                    seasonnumber = None
-
                 if 'seriesname' in namedgroups:
                     seriesname = match.group('seriesname')
                 else:
@@ -320,11 +312,26 @@ class FileParser(object):
                 if seriesname != None:
                     seriesname = cleanRegexedSeriesName(seriesname)
 
-                episode = EpisodeInfo(
-                    seriesname = seriesname,
-                    seasonnumber = seasonnumber,
-                    episodenumbers = episodenumbers,
-                    filename = self.path)
+                if 'seasonnumber' in namedgroups:
+                    seasonnumber = int(match.group('seasonnumber'))
+
+                    episode = EpisodeInfo(
+                        seriesname = seriesname,
+                        seasonnumber = seasonnumber,
+                        episodenumbers = episodenumbers,
+                        filename = self.path)
+                elif 'year' in namedgroups and 'month' in namedgroups and 'day' in namedgroups:
+                    episode = DatedEpisodeInfo(
+                        seriesname = seriesname,
+                        episodenumbers = episodenumbers,
+                        filename = self.path)
+                else:
+                    # No season number specified, usually for Anime
+                    episode = NoSeasonEpisodeInfo(
+                        seriesname = seriesname,
+                        episodenumbers = episodenumbers,
+                        filename = self.path)
+
                 return episode
         else:
             raise InvalidFilename(self.path)
@@ -503,7 +510,19 @@ class EpisodeInfo(object):
     def fullfilename(self):
         return u"%s.%s" % (self.filename, self.extension)
 
-    def generateFilename(self):
+    def sortable_info(self):
+        """Returns a tuple of sortable information
+        """
+        return (self.seriesname, self.seasonnumber, self.episodenumbers)
+
+    def number_string(self):
+        """Used in UI
+        """
+        return "season: %s, episode: %s" % (
+            self.seasonnumber,
+            ", ".join([str(x) for x in self.episodenumbers]))
+
+    def generateFilename(self, lowercase = False): #TODO: Simplify this method
         """
         Uses the following config options:
         filename_with_episode # Filename when episode name is found
@@ -533,8 +552,6 @@ class EpisodeInfo(object):
         if self.episodename is None:
             if self.seasonnumber is None:
                 fname = Config['filename_without_episode_no_season'] % epdata
-            elif self.seasonnumber == -1:
-                fname = Config['filename_with_date_without_episode'] % epdata
             else:
                 fname = Config['filename_without_episode'] % epdata
         else:
@@ -551,6 +568,9 @@ class EpisodeInfo(object):
             else:
                 fname = Config['filename_with_episode'] % epdata
 
+        if lowercase or Config['lowercase_filename']:
+            fname = fname.lower()
+
         return makeValidFilename(
             fname,
             normalize_unicode = Config['normalize_unicode_filenames'],
@@ -561,6 +581,134 @@ class EpisodeInfo(object):
         return "<%s: %s>" % (
             self.__class__.__name__,
             self.generateFilename())
+
+
+class DatedEpisodeInfo(EpisodeInfo):
+    def __init__(self,
+        seriesname = None,
+        episodenumbers= None,
+        episodename = None,
+        filename = None):
+
+        self.seriesname = seriesname
+        self.episodenumbers = episodenumbers
+        self.episodename = episodename
+        self.fullpath = filename
+
+    def sortable_info(self):
+        """Returns a tuple of sortable information
+        """
+        return (self.seriesname, self.episodenumbers)
+
+    def number_string(self):
+        """Used in UI
+        """
+        return "episode: %s" % (
+            ", ".join([str(x) for x in self.episodenumbers]))
+
+    def generateFilename(self, lowercase = False):
+        # Format episode number into string, or a list
+        dates = str(self.episodenumbers[0])
+        if isinstance(self.episodename, list):
+            prep_episodename = formatEpisodeName(
+                self.episodename,
+                join_with = Config['multiep_join_name_with']
+            )
+        else:
+            prep_episodename = self.episodename
+
+        # Data made available to config'd output file format
+        if self.extension is None:
+            prep_extension = ''
+        else:
+            prep_extension = '.%s' % self.extension
+
+        epdata = {
+            'seriesname': self.seriesname,
+            'episode': dates,
+            'episodename': prep_episodename,
+            'ext': prep_extension}
+
+        if self.episodename is None:
+            fname = Config['filename_with_date_without_episode'] % epdata
+        else:
+            fname = Config['filename_with_date_and_episode'] % epdata
+
+        if lowercase or Config['lowercase_filename']:
+            fname = fname.lower()
+
+        return makeValidFilename(
+            fname,
+            normalize_unicode = Config['normalize_unicode_filenames'],
+            windows_safe = Config['windows_safe_filenames'],
+            replace_with = Config['replace_invalid_characters_with'])
+
+
+class NoSeasonEpisodeInfo(EpisodeInfo):
+    def __init__(self,
+        seriesname = None,
+        episodenumbers= None,
+        episodename = None,
+        filename = None):
+
+        self.seriesname = seriesname
+        self.episodenumbers = episodenumbers
+        self.episodename = episodename
+        self.fullpath = filename
+
+    def sortable_info(self):
+        """Returns a tuple of sortable information
+        """
+        return (self.seriesname, self.episodenumbers)
+
+    def number_string(self):
+        """Used in UI
+        """
+        return "episode: %s" % (
+            ", ".join([str(x) for x in self.episodenumbers]))
+
+    def generateFilename(self, lowercase = False):
+        """
+        Uses the following config options:
+        filename_with_episode # Filename when episode name is found
+        filename_without_episode # Filename when no episode can be found
+        episode_single # formatting for a single episode number
+        episode_separator # used to join multiple episode numbers
+        """
+
+        epno = formatEpisodeNumbers(self.episodenumbers)
+
+        # Data made available to config'd output file format
+        if self.extension is None:
+            prep_extension = ''
+        else:
+            prep_extension = '.%s' % self.extension
+
+        epdata = {
+            'seriesname': self.seriesname,
+            'episode': epno,
+            'episodename': self.episodename,
+            'ext': prep_extension}
+
+        if self.episodename is None:
+            fname = Config['filename_without_episode_no_season'] % epdata
+        else:
+            if isinstance(self.episodename, list):
+                epdata['episodename'] = formatEpisodeName(
+                    self.episodename,
+                    join_with = Config['multiep_join_name_with']
+                )
+
+            fname = Config['filename_with_episode_no_season'] % epdata
+
+        if lowercase or Config['lowercase_filename']:
+            fname = fname.lower()
+
+        return makeValidFilename(
+            fname,
+            normalize_unicode = Config['normalize_unicode_filenames'],
+            windows_safe = Config['windows_safe_filenames'],
+            replace_with = Config['replace_invalid_characters_with'])
 
 
 def same_partition(f1, f2):
