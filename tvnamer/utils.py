@@ -743,7 +743,7 @@ class Renamer(object):
                     newpath, self.filename))
 
         if Config['link_files_enable']:
-            p("Creating hard link")
+            p("Creating hard link: %s" % newpath)
             os.link(self.filename, newpath)
         else:
             os.rename(self.filename, newpath)

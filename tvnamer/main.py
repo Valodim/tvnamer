@@ -153,6 +153,11 @@ def processFile(tvdb_instance, episode):
     p("New filename: %s" % newName)
 
     if Config['always_rename']:
+	if Config['move_files_enable']:
+	    if os.path.isfile("%s/%s" % (getDestinationFolder(episode), newName)):
+		p("File exists, aborting.")
+		return
+
         doRenameFile(cnamer, newName)
         if Config['move_files_enable']:
             doMoveFile(cnamer = cnamer, destDir = getDestinationFolder(episode))
