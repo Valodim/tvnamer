@@ -393,10 +393,11 @@ def makeValidFilename(value, normalize_unicode = False, windows_safe = False, cu
     # If the filename starts with a . prepend it with an underscore, so it
     # doesn't become hidden.
 
-    # This is done before calling splitext to handle filename of "."
+    # This is done before calling splitext to handle filename of ".", as
     # splitext acts differently in python 2.5 and 2.6 - 2.5 returns ('', '.')
     # and 2.6 returns ('.', ''), so rather than special case '.', this
-    # special-cases all files starting with "." equally (since dotfiles have)
+    # special-cases all files starting with "." equally (since dotfiles have
+    # no extension)
     if value.startswith("."):
         value = "_" + value
 
@@ -457,6 +458,7 @@ def makeValidFilename(value, normalize_unicode = False, windows_safe = False, cu
             new_length = max_len - len(value)
             extension = extension[:new_length]
         else:
+            # File name is longer than extension, truncate filename.
             new_length = max_len - len(extension)
             value = value[:new_length]
 
@@ -473,6 +475,7 @@ def formatEpisodeNumbers(episodenumbers):
             Config['episode_single'] % x for x in episodenumbers)
 
     return epno
+
 
 class EpisodeInfo(object):
     """Stores information (season, episode number, episode name), and contains
@@ -522,7 +525,7 @@ class EpisodeInfo(object):
             self.seasonnumber,
             ", ".join([str(x) for x in self.episodenumbers]))
 
-    def generateFilename(self, lowercase = False): #TODO: Simplify this method
+    def generateFilename(self, lowercase = False):
         """
         Uses the following config options:
         filename_with_episode # Filename when episode name is found
@@ -531,10 +534,7 @@ class EpisodeInfo(object):
         episode_separator # used to join multiple episode numbers
         """
         # Format episode number into string, or a list
-        if self.seasonnumber != -1:
-            epno = formatEpisodeNumbers(self.episodenumbers)
-        else:
-            epno = str(self.episodenumbers[0])
+        epno = formatEpisodeNumbers(self.episodenumbers)
 
         # Data made available to config'd output file format
         if self.extension is None:
@@ -550,23 +550,14 @@ class EpisodeInfo(object):
             'ext': prep_extension}
 
         if self.episodename is None:
-            if self.seasonnumber is None:
-                fname = Config['filename_without_episode_no_season'] % epdata
-            else:
-                fname = Config['filename_without_episode'] % epdata
+            fname = Config['filename_without_episode'] % epdata
         else:
             if isinstance(self.episodename, list):
                 epdata['episodename'] = formatEpisodeName(
                     self.episodename,
                     join_with = Config['multiep_join_name_with']
                 )
-
-            if self.seasonnumber is None:
-                fname = Config['filename_with_episode_no_season'] % epdata
-            elif self.seasonnumber == -1:
-                fname = Config['filename_with_date_and_episode'] % epdata
-            else:
-                fname = Config['filename_with_episode'] % epdata
+            fname = Config['filename_with_episode'] % epdata
 
         if lowercase or Config['lowercase_filename']:
             fname = fname.lower()
@@ -668,14 +659,6 @@ class NoSeasonEpisodeInfo(EpisodeInfo):
             ", ".join([str(x) for x in self.episodenumbers]))
 
     def generateFilename(self, lowercase = False):
-        """
-        Uses the following config options:
-        filename_with_episode # Filename when episode name is found
-        filename_without_episode # Filename when no episode can be found
-        episode_single # formatting for a single episode number
-        episode_separator # used to join multiple episode numbers
-        """
-
         epno = formatEpisodeNumbers(self.episodenumbers)
 
         # Data made available to config'd output file format

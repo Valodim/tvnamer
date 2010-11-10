@@ -73,6 +73,8 @@ def test_single_episode():
 
 
 def test_multi_episodes_continuous():
+    """A two-part episode should not have the episode name repeated
+    """
     ep = EpisodeInfo(
         seriesname = 'Stargate SG-1',
         seasonnumber = 1,
@@ -88,6 +90,8 @@ def test_multi_episodes_continuous():
 
 
 def test_multi_episodes_seperate():
+    """File with two episodes, but with different names
+    """
     ep = EpisodeInfo(
         seriesname = 'Stargate SG-1',
         seasonnumber = 1,
@@ -132,8 +136,8 @@ def test_no_name():
         'Scrubs - [01x02].avi')
 
 
-def test_no_name_no_ext():
-    """Episode with no name or extension
+def test_episode_no_name_no_ext():
+    """EpisodeInfo with no name or extension
     """
     ep = EpisodeInfo(
         seriesname = 'Scrubs',
@@ -147,12 +151,39 @@ def test_no_name_no_ext():
         'Scrubs - [01x02]')
 
 
-def test_no_series_number():
-    """Episode without series number
+def test_noseason_no_name_no_ext():
+    """NoSeasonEpisodeInfo with no name or extension
     """
-    ep = EpisodeInfo(
+    ep = NoSeasonEpisodeInfo(
         seriesname = 'Scrubs',
-        seasonnumber = None,
+        episodenumbers = [2],
+        episodename = None,
+        filename = None)
+
+    assertEquals(
+        ep.generateFilename(),
+        'Scrubs - [02]')
+
+
+def test_datedepisode_no_name_no_ext():
+    """DatedEpisodeInfo with no name or extension
+    """
+    ep = DatedEpisodeInfo(
+        seriesname = 'Scrubs',
+        episodenumbers = [datetime.date(2010, 11, 23)],
+        episodename = None,
+        filename = None)
+
+    assertEquals(
+        ep.generateFilename(),
+        'Scrubs - [2010-11-23]')
+
+
+def test_no_series_number():
+    """Episode without season number
+    """
+    ep = NoSeasonEpisodeInfo(
+        seriesname = 'Scrubs',
         episodenumbers = [2],
         episodename = 'My Mentor',
         filename = None)
