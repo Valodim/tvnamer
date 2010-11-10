@@ -242,6 +242,10 @@ def tvnamer(paths):
             "It has not been heavily tested, and is not recommended for "
             "general use yet.")
 
+    if Config['umask']:
+	p("Setting umask to %s" % oct(int(Config['umask'], 8)))
+	os.umask(int(Config['umask'], 8))
+
     p("#" * 20)
     p("# Starting tvnamer")
 

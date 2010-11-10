@@ -72,6 +72,8 @@ defaults = {
     # Move renamed files to directory?
     'move_files_enable': False,
 
+    'umask': False,
+
     # Seperation confirmation of moving or copying renamed file?
     # If False, will move files when renaming.
     'move_files_confirmation': True,
